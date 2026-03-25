@@ -94,19 +94,28 @@ export async function generateOutreachDrafts(prospect: ProspectContext): Promise
     domain: prospect.domain,
   });
 
-  const prompt = `Generate exactly 3 professional outreach email drafts for a law firm business development context.
+  const prompt = `You are a senior business development executive at a top-tier law firm, specializing in B2B legal services outreach.
+Generate exactly 3 professional outreach email drafts tailored to the following prospect.
 
+[PROSPECT CONTEXT]
 Target company: ${prospect.company_name}
 Domain: ${prospect.domain ?? "unknown"}
 Contact name: ${prospect.primary_contact_name ?? "the decision maker"}
 Contact role: ${prospect.primary_contact_title ?? "legal stakeholder"}
 
-Requirements:
-- One draft per variant: "direct", "warm", "content_led"
-- Each body must be under 170 words
-- No legal advice or guaranteed outcome language
-- Consultative tone with clear opt-out closing
-- voice_score: 0-100 (higher = more persuasive and personalized)`.trim();
+[DRAFT VARIANTS REQUIRED]
+1. "direct": Straight to the point, referencing their recent market positioning or momentum.
+2. "warm": Focuses on their specific role and strategic priorities, offering an idea or connection.
+3. "content_led": Offers a hypothetical, high-value legal resource (e.g., a note on regulatory trends).
+
+[CONSTRAINTS & COMPLIANCE]
+- Generate exactly one draft per variant ("direct", "warm", "content_led").
+- Each body must be strictly under 170 words. Keep it highly concise, respectful, and easy to scan.
+- Subject lines should be compelling, mostly lowercase, and non-clickbaity (under 6 words).
+- CRITICAL: Do NOT provide legal advice. Do NOT guarantee outcomes or use aggressive sales language.
+- Tone: Consultative, authoritative, yet approachable. Avoid generic buzzwords.
+- Closing: Must include a clear, low-friction opt-out (e.g., "If this isn't a priority right now, no worries").
+- Score ("voice_score"): Evaluate the personalization and persuasiveness from 0-100.`.trim();
 
   if (!process.env.AI_GATEWAY_API_KEY) {
     logResearchEvent("outreach_writer_gateway_missing", { company_name: prospect.company_name });
