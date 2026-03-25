@@ -62,9 +62,9 @@ export async function POST(request: Request) {
     }
     prospectId = parsed.data.prospect_id;
   } else {
-    let body: { prospect_id?: string };
+    let body: any;
     try {
-      body = (await request.json()) as { prospect_id?: string };
+      body = await request.json();
     } catch {
       return apiError(
         request,
@@ -89,24 +89,9 @@ export async function POST(request: Request) {
     prospectId = parsed.data.prospect_id;
   }
 
-  if (!prospectId) {
-    const message = "Missing prospect_id";
-    if (formMode) {
-      return NextResponse.redirect(new URL(`/dashboard?error=${toQueryParam(message)}`, request.url));
-    }
-    return apiError(
-      request,
-      {
-        code: "missing_input",
-        message,
-      },
-      { status: 400 },
-    );
-  }
-
   const { data: prospect } = await supabase
     .from("prospects")
-    .select("id, firm_id, company_name, domain, primary_contact_title")
+    .select("id, firm_id, company_name, domain")
     .eq("id", prospectId)
     .maybeSingle();
 
@@ -115,36 +100,7 @@ export async function POST(request: Request) {
     if (formMode) {
       return NextResponse.redirect(new URL(`/dashboard?error=${toQueryParam(message)}`, request.url));
     }
-    return apiError(
-      request,
-      {
-        code: "prospect_not_found",
-        message,
-      },
-      { status: 404 },
-    );
-  }
-
-  const { data: membership } = await supabase
-    .from("firm_memberships")
-    .select("id")
-    .eq("firm_id", prospect.firm_id)
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (!membership) {
-    const message = "Access denied for firm enrichment";
-    if (formMode) {
-      return NextResponse.redirect(new URL(`/dashboard?error=${toQueryParam(message)}`, request.url));
-    }
-    return apiError(
-      request,
-      {
-        code: "access_denied",
-        message,
-      },
-      { status: 403 },
-    );
+    return apiError(request, { code: "prospect_not_found", message }, { status: 404 });
   }
 
   const entitlement = await assertFirmEntitled({
@@ -162,8 +118,7 @@ export async function POST(request: Request) {
 
   const result = await runProviderEnrichment({
     supabase,
-    // @ts-expect-error: Deprecated provider
-    provider: "tavily",
+    provider: "vibe",
     firmId: prospect.firm_id,
     prospect,
     userId: user.id,
@@ -186,7 +141,7 @@ export async function POST(request: Request) {
   }
 
   if (formMode) {
-    const message = `Tavily enrichment complete (${result.signal_count} signals added)`;
+    const message = `Vibe enrichment complete (${result.signal_count} signals added)`;
     return NextResponse.redirect(
       new URL(`/dashboard?message=${toQueryParam(message)}`, request.url),
     );
